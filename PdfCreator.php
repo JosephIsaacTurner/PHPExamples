@@ -15,22 +15,6 @@ function pdfCreator() {
         require_once('fpdi/fpdi/src/Tcpdf/Fpdi.php');
         require_once('pdf-rotate/src/PdfRotate.php');
         require_once('FPDF/fpdf.php');
-    
-
-    ## CHECK IF LOGGED IN
-    $current_user = wp_get_current_user();
-    $current_user_email = $current_user->user_email;
-    $current_user_name = $current_user->user_login;  
-    # IF NOT LOGGED IN DISPLAY LOG IN FORM      
-    if (!strlen($current_user_email)>0) {
-        echo "  <p>You are not logged in.</p>
-                <p> You must be logged in to see this page.</p>
-                <form><button type='submit' formaction='/login'>Login</button></form>
-                    <p></p><p> or </>
-                <form><button type='submit' formaction='/register'>Register</button></form>
-            ";
-        return False;
-    }
 
     ## GET WWR_ID, OTHER IMPORTANT VARIABLES AND POST/GET DATA
         if(isset($_GET["wwr_id"])){

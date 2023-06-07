@@ -120,7 +120,6 @@
         </style>";
         
         // Create the HTML/JavaScript string for the histogram chart
-        $chartParent = "<div style='width: 80%; margin: 0 auto;'";
         $chartHeader = '<div class="tab">';
         $chartContent = "";
 

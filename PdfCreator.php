@@ -16,13 +16,13 @@ function pdfCreator() {
         require_once('pdf-rotate/src/PdfRotate.php');
         require_once('FPDF/fpdf.php');
 
-    ## GET WWR_ID, OTHER IMPORTANT VARIABLES AND POST/GET DATA
-        if(isset($_GET["wwr_id"])){
-            $wwr_id = $_GET["wwr_id"];
+    ## GET example_ID, OTHER IMPORTANT VARIABLES AND POST/GET DATA
+        if(isset($_GET["example_id"])){
+            $example_id = $_GET["example_id"];
         }
         else{
             echo "
-            <b>Alert: No WWR ID Provided</b>
+            <b>Alert: No example ID Provided</b>
             <br>
             ";
             return False;
@@ -34,17 +34,17 @@ function pdfCreator() {
 
         # MAKE SURE DATABASE CONNECTION SUCCESFUL
         if (mysqli_connect_errno()) {
-            echo "<p><b>Failed to connect to the database.</b> Please contact WWR to notify us of this issue.</p>";
+            echo "<p><b>Failed to connect to the database.</b> Please contact example to notify us of this issue.</p>";
             return False;
         }
 
     ## TRACK WHO CAME HERE
-    if(isset($wwr_id)) {
-        mysqli_query($connection, "insert into 1wwr_usage_log   (WWR_ID
+    if(isset($example_id)) {
+        mysqli_query($connection, "insert into 1example_usage_log   (example_ID
                                                                 , User_Name
                                                                 , User_Email 
                                                                 , Page_Accessed) 
-                                                        values ('$wwr_id'
+                                                        values ('$example_id'
                                                                 , '$current_user_name'
                                                                 , '$current_user_email' 
                                                                 , '" . get_the_title() . "'
@@ -55,16 +55,16 @@ function pdfCreator() {
     ## QUERY DATABASE TO FIND INFORMATION ABOUT SUBJECT/INVESTIGATION AND WHO LAST SAVED THE CURRENT REPORT
         $sql_statement = "SELECT subject_first_name
                                 , subject_last_name
-                                , 1wwr_investigation.file_number
-                                , SUBSTRING_INDEX(1wwr_files.who_uploaded,'@',1) as User_Email
+                                , 1example_investigation.file_number
+                                , SUBSTRING_INDEX(1example_files.who_uploaded,'@',1) as User_Email
                                 , when_uploaded as When_Submitted
-                            FROM 1wwr_investigation
-                            LEFT JOIN 1wwr_files
-                            ON 1wwr_investigation.wwr_id = 1wwr_files.wwr_id
-                            WHERE 1wwr_files.latest_record = 0 
-                                AND 1wwr_investigation.latest_record = 0 
-                                AND 1wwr_investigation.wwr_id = '$wwr_id' 
-                                AND 1wwr_files.short_file_name = 'Current_Report.pdf'";
+                            FROM 1example_investigation
+                            LEFT JOIN 1example_files
+                            ON 1example_investigation.example_id = 1example_files.example_id
+                            WHERE 1example_files.latest_record = 0 
+                                AND 1example_investigation.latest_record = 0 
+                                AND 1example_investigation.example_id = '$example_id' 
+                                AND 1example_files.short_file_name = 'Current_Report.pdf'";
 
         ## RUN QUERY AND EXTRACT RETURNED FIELDS INTO VARIABLES
         $result = mysqli_query($connection, $sql_statement);
@@ -85,7 +85,7 @@ function pdfCreator() {
             if (isset($_FILES["fileupload$i"]['name']) && !empty($_FILES["fileupload$i"]['name'])){
                 # MOVE UPLOADED FILE INTO UPLOADS DIRECTORY (NOTE, WE WILL DELETE THEM LATER ON). NOTE, I HAVE TO FIX THIS LINE LATER.
                 # I STILL CAN'T FIGURE OUT WHY I DID THIS, BUT THERE MUST BE SOME REASON. I THINK ITS BECAUSE WHEN I GET RID OF SPECIAL CHARACTERS IT GETS RID OF PERIODS.
-                $uploadFileName =  $_SERVER['DOCUMENT_ROOT'] . "/wp-content/uploads/wwr-cu/TEMP_$wwr_id" . "_" . str_replace('tif', '', str_replace('tiff', '', str_replace('TIF', '', str_replace('TIFF', '', str_replace('PNG', '', str_replace('png','',str_replace('JPG', '', str_replace('PDF', '', str_replace('jpg','', str_replace('pdf', '', clean($_FILES["fileupload$i"]["name"])))))))))));
+                $uploadFileName =  $_SERVER['DOCUMENT_ROOT'] . "/wp-content/uploads/example-cu/TEMP_$example_id" . "_" . str_replace('tif', '', str_replace('tiff', '', str_replace('TIF', '', str_replace('TIFF', '', str_replace('PNG', '', str_replace('png','',str_replace('JPG', '', str_replace('PDF', '', str_replace('jpg','', str_replace('pdf', '', clean($_FILES["fileupload$i"]["name"])))))))))));
                 ##CHECK IF PDF
                 if(strtolower(pathinfo($_FILES["fileupload$i"]['name'], PATHINFO_EXTENSION)) == "pdf"){
                     $uploadFileName .= '.pdf';
@@ -198,7 +198,7 @@ function pdfCreator() {
                     $pdf->SetPrintFooter(false);
                 ## WRITE CONTENT OF PDF
                     $pdf->writeHTML('<p style="text-align:center"><br><br><br><br><br><br><br><span nobr="true">' .  nl2br(trim($_POST["covertext$i"])) . "</span></p>");
-                    $attachmentTitle = $_SERVER['DOCUMENT_ROOT'] . '/wp-content/uploads/wwr-cu/' . $wwr_id .  '_' . 'TEMP_COVER' . $i . '.pdf';
+                    $attachmentTitle = $_SERVER['DOCUMENT_ROOT'] . '/wp-content/uploads/example-cu/' . $example_id .  '_' . 'TEMP_COVER' . $i . '.pdf';
                     $pdf->Output($attachmentTitle, 'F');
                 ## APPEND TO ARRAY OF TEMPORARY ATTACHMENT TITLES
                     $coverPages[$i] = $attachmentTitle;        	
@@ -214,15 +214,15 @@ function pdfCreator() {
         $attachedPdf = False;
         $attachedImg = False;
         #GET SOURCE PDF/TEMP PDF NAMES IF ATTACHED (IF PDF):
-        if(!empty($_POST["pdfAppend$i"]) && !empty($_POST["newFileName"]) && substr($_POST["pdfAppend$i"],-4) == ".pdf" && !empty($wwr_id)){
-            $SourcePdf = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/wwr-cu/" . $_POST["pdfAppend$i"];
-            $TempPdf = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/wwr-cu/" . "TEMP$i" . "_" . $_POST["pdfAppend$i"];
+        if(!empty($_POST["pdfAppend$i"]) && !empty($_POST["newFileName"]) && substr($_POST["pdfAppend$i"],-4) == ".pdf" && !empty($example_id)){
+            $SourcePdf = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/example-cu/" . $_POST["pdfAppend$i"];
+            $TempPdf = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/example-cu/" . "TEMP$i" . "_" . $_POST["pdfAppend$i"];
             $attachedPdf = True;
         }
         #CHECK IF ATTACHMENT WAS OTHER FILETYPE, LIKE PNG OR PDF
-        elseif(!empty($_POST["pdfAppend$i"]) && !empty($_POST["newFileName"]) && in_array(strtolower(substr($_POST["pdfAppend$i"],-4)), array(".jpg",".png")) && !empty($wwr_id)){
-            $sourceImg = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/wwr-cu/" . $_POST["pdfAppend$i"];
-            $TempPdf = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/wwr-cu/" . "TEMP$i" . "_" . substr($_POST["pdfAppend$i"], 0, strlen($_POST["pdfAppend$i"])-4) . ".pdf";
+        elseif(!empty($_POST["pdfAppend$i"]) && !empty($_POST["newFileName"]) && in_array(strtolower(substr($_POST["pdfAppend$i"],-4)), array(".jpg",".png")) && !empty($example_id)){
+            $sourceImg = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/example-cu/" . $_POST["pdfAppend$i"];
+            $TempPdf = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/example-cu/" . "TEMP$i" . "_" . substr($_POST["pdfAppend$i"], 0, strlen($_POST["pdfAppend$i"])-4) . ".pdf";
             #CONVERT IMAGE TO PDF
             $magickCommand = "convert $sourceImg -gravity center -density 72 -units pixelsperinch -page letter $TempPdf";
             if(!shell_exec($magickCommand)){
@@ -232,7 +232,7 @@ function pdfCreator() {
             $attachedImg = True;
         }
         # CHECK IF ATTACHMENT IS TIF/TIFF (MULTI PAGE JPG/PNG)
-        elseif(!empty($_POST["pdfAppend$i"]) && !empty($_POST["newFileName"]) && in_array(strtolower(substr($_POST["pdfAppend$i"], -4)), array("tiff", ".tif")) && !empty($wwr_id)){
+        elseif(!empty($_POST["pdfAppend$i"]) && !empty($_POST["newFileName"]) && in_array(strtolower(substr($_POST["pdfAppend$i"], -4)), array("tiff", ".tif")) && !empty($example_id)){
             # THERE ARE TWO POSSIBLE EXTENSIONS WITH VARIABLE LENGTH. DECIDE WHICH EXTENSION:
             if(strtolower(substr($_POST["pdfAppend$i"], -5)) == ".tiff"){
                 $ext = ".tiff";
@@ -240,8 +240,8 @@ function pdfCreator() {
             else{
                 $ext = ".tif";
             }
-            $sourceImg = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/wwr-cu/" . $_POST["pdfAppend$i"];
-            $TempPdf = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/wwr-cu/" . "TEMP$i" . "_" . substr($_POST["pdfAppend$i"], 0, strlen($_POST["pdfAppend$i"])-strlen($ext)) . ".pdf";
+            $sourceImg = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/example-cu/" . $_POST["pdfAppend$i"];
+            $TempPdf = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/example-cu/" . "TEMP$i" . "_" . substr($_POST["pdfAppend$i"], 0, strlen($_POST["pdfAppend$i"])-strlen($ext)) . ".pdf";
             #CONVERT TIF/TIFF TO PDF
             $magickCommand = "convert $sourceImg -density 72 -units pixelsperinch -page letter -compress jpeg $TempPdf";
             if(!shell_exec($magickCommand)){
@@ -251,12 +251,12 @@ function pdfCreator() {
             $attachedImg = True;   
         }
         # GET NAME OF PDF IF UPLOADED:
-        elseif(!empty($uploadedFiles[$i]) && !empty($_POST["newFileName"]) && !empty($wwr_id)){
+        elseif(!empty($uploadedFiles[$i]) && !empty($_POST["newFileName"]) && !empty($example_id)){
             $TempPdf = $uploadedFiles[$i];
             $uploadedPdf = True;
         }
         #CHECK TO SEE IF USER WANTED TO SELECT SPECIFIC PAGES FROM PDF:
-        if(!empty($_POST["appendPagesStart$i"]) && !empty($_POST["appendPagesEnd$i"]) && isset($wwr_id)){
+        if(!empty($_POST["appendPagesStart$i"]) && !empty($_POST["appendPagesEnd$i"]) && isset($example_id)){
             # FIND FIRST PAGE:
             $FirstPage = $_POST["appendPagesStart$i"];
             # FIND LAST PAGE:
@@ -265,7 +265,7 @@ function pdfCreator() {
             if($uploadedPdf){
                 #IF SO, WE NEED TO CHANGE OUR STRATEGY ABOUT WHAT IS THE SOURCE/TEMP PDF NAME
                 $SourcePdf = $TempPdf;
-                $TempPdf = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/wwr-cu/" . "TEMP$i" . "_" . basename(str_replace('pdf', '', clean($_FILES["fileupload$i"]["name"]))) . ".pdf";
+                $TempPdf = $_SERVER["DOCUMENT_ROOT"] . "wp-content/uploads/example-cu/" . "TEMP$i" . "_" . basename(str_replace('pdf', '', clean($_FILES["fileupload$i"]["name"]))) . ".pdf";
             }
             elseif($attachedImg){
                 #SAME THING HERE
@@ -299,7 +299,7 @@ function pdfCreator() {
         ## LOOP THROUGH ALL ATTACHED PDFS:
         for ($i=1;$i<6;$i++){
             # CHECK IF USER REQUESTED TO ROTATE PDF:
-            if (isset($tempPdfArray[$i]) && !empty($_POST["rotateDegrees$i"]) && $_POST["rotateDegrees$i"] != "0" && isset($wwr_id) && !empty($_POST["newFileName"])){
+            if (isset($tempPdfArray[$i]) && !empty($_POST["rotateDegrees$i"]) && $_POST["rotateDegrees$i"] != "0" && isset($example_id) && !empty($_POST["newFileName"])){
                 #CREATE ROTATED PDF WITH PdfRotate CLASS
                 $pdf = new PdfRotate;
                 #SPECIFY SOURCE FILE (FROM OUR ARRAY OF TEMP PDFS)
@@ -315,9 +315,9 @@ function pdfCreator() {
 
     ## MERGE THE TEMP PDFS INTO ONE PDF
         #CHECK TO SEE IF USER ACTUALLY REQUESTED NEW PDF:
-        if (!empty($_POST["newFileName"]) && count($tempPdfArray)>0 && isset($wwr_id)){
+        if (!empty($_POST["newFileName"]) && count($tempPdfArray)>0 && isset($example_id)){
             #DEFINE THE NAME OF THE FINAL PDF
-            $outputName = "/wp-content/uploads/wwr-cu/" . $wwr_id . "_" . clean($_POST["newFileName"]) . ".pdf";
+            $outputName = "/wp-content/uploads/example-cu/" . $example_id . "_" . clean($_POST["newFileName"]) . ".pdf";
             $outputFile = $_SERVER["DOCUMENT_ROOT"] . $outputName;
             
             #WRITE GHOSTSCRIPT SHELL COMMAND TO MERGE PDFS, BY LOOPING THROUGH ALL FILES IN ARRAY
@@ -364,7 +364,7 @@ function pdfCreator() {
 
     ## INSERT NEW RECORD INTO DATABASE FOR THE NEW PDF
         ## CHECK TO SEE IF NEW PDF WAS ACTUALLY MADE:
-        if (!empty($_POST["newFileName"]) && count($tempPdfArray)>0 && isset($wwr_id)) {
+        if (!empty($_POST["newFileName"]) && count($tempPdfArray)>0 && isset($example_id)) {
             #WRITE MySQL INSERT STATEMENT:
             $documentType = $_POST["documentType"];
             # LOGIC TO DECIDE IF PDF WILL BE VIEWABLE TO CUSTOMERS
@@ -373,7 +373,7 @@ function pdfCreator() {
                                                 , "Customer Upload after Submission"
                                                 , "Customer Use"
                                                 , "customer_uploaded_files"
-                                                , "Message from WWR"
+                                                , "Message from example"
                                                 , "Report"
                                                 , "Report: Final")
                                             )){
@@ -390,8 +390,8 @@ function pdfCreator() {
                 $sourcenumber = 0;
             }
             #WRITE INSERT SQL STATEMENT 
-            $insert_statement = "INSERT INTO 1wwr_files (
-                                            wwr_id
+            $insert_statement = "INSERT INTO 1example_files (
+                                            example_id
                                             , who_uploaded
                                             , how_uploaded
                                             , uploaded_file_name
@@ -404,12 +404,12 @@ function pdfCreator() {
                                             , source_number
                                             )
                                         VALUES (
-                                            '$wwr_id'
+                                            '$example_id'
                                             , '" . $current_user->user_login . "'
                                             , 'PDF_screen'
-                                            , '" .  $wwr_id . '_' . clean($_POST["newFileName"]) . ".pdf'
-                                            , '/wp-content/uploads/wwr-cu/'
-                                            , '/wp-content/uploads/wwr-cu/" . $wwr_id . '_' . clean($_POST["newFileName"]) . ".pdf'
+                                            , '" .  $example_id . '_' . clean($_POST["newFileName"]) . ".pdf'
+                                            , '/wp-content/uploads/example-cu/'
+                                            , '/wp-content/uploads/example-cu/" . $example_id . '_' . clean($_POST["newFileName"]) . ".pdf'
                                             , '" . clean($_POST["newFileName"]) . ".pdf'
                                             , '$documentType'
                                             , '$customer_can_access'
@@ -420,15 +420,15 @@ function pdfCreator() {
             ## RUN INSERT STATEMENT, CHECK FOR ERRORS:
             if (!mysqli_query($connection,$insert_statement)) {
             echo "<p><b>There was an unspecified error with your PDF generation. </b> Please attempt again. </p>
-            <p>If it still does not work, please contact WWR to notify us of this issue.</p>"; 
+            <p>If it still does not work, please contact example to notify us of this issue.</p>"; 
             }
         }
 
-    ## QUERY THE DATABASE TO FIND ALL PDFS ASSOCIATED WITH WWR ID
+    ## QUERY THE DATABASE TO FIND ALL PDFS ASSOCIATED WITH example ID
         $sql_statement = "SELECT uploaded_file_name, short_file_name 
-                            FROM 1wwr_files 
+                            FROM 1example_files 
                             WHERE latest_record = 0 
-                                AND wwr_id = '$wwr_id' 
+                                AND example_id = '$example_id' 
                                 AND RIGHT(short_file_name, 4) IN ('.pdf','.jpg','.png', 'tiff', '.tif')
                             ORDER BY short_file_name;";
         $result = mysqli_query($connection, $sql_statement);
@@ -439,21 +439,21 @@ function pdfCreator() {
             $fileLocation = $row["uploaded_file_name"];
             $fileName = $row["short_file_name"];
             ##GET PAGE COUNT FOR EACH PDF
-            $pageCount = pingPDF($_SERVER["DOCUMENT_ROOT"] . "/wp-content/uploads/wwr-cu/" . $fileLocation);
+            $pageCount = pingPDF($_SERVER["DOCUMENT_ROOT"] . "/wp-content/uploads/example-cu/" . $fileLocation);
             ## CREATE STRING IN HTML THAT LISTS ALL PDFS AND THEIR PAGE COUNT. 
             ## WE WILL USE THIS STRING LATER WHEN WRITING THE PAGE HTML.
             $optionString .= "
             <option value='$fileLocation' pagecount='$pageCount'> $fileName ($pageCount pages) </option>";
             ## CREATE STRING IN HTML THAT CONTAINS ALL PDFS AS OPENABLE LINKS
             $pdfLinks .= "
-            <a target='_blank' class='darklink' href='/wp-content/uploads/wwr-cu/$fileLocation'>$fileName ($pageCount pages)" . "</a><br>";
+            <a target='_blank' class='darklink' href='/wp-content/uploads/example-cu/$fileLocation'>$fileName ($pageCount pages)" . "</a><br>";
         }
 
     ## QUERY DATABASE TO FIND SOURCE NAMES:
         $sql_statement = "SELECT source_name, source_number, source_alternative_name
-                            FROM 1wwr_sources 
+                            FROM 1example_sources 
                             WHERE latest_record = 0 
-                                AND wwr_id = '$wwr_id'";
+                                AND example_id = '$example_id'";
         $result = mysqli_query($connection, $sql_statement);
         $sourceOptions = "";
         $sourceAttachmentOptions = "";
@@ -478,7 +478,7 @@ function pdfCreator() {
         if (WPTime_check_user_role('administrator') || WPTime_check_user_role('editor') || WPTime_check_user_role('author') ){
             ## WRITE HTML FOR THE TABLE CELL/BUTTON FOR INVOICE	
             $invoice = " <td class='noBorder' style='text-align: center;'> 
-                            <a  class='' style='color:white' href='/invoice/?wwr_id=$wwr_id'>   
+                            <a  class='' style='color:white' href='/invoice/?example_id=$example_id'>   
                                 <button type='button' class='buttonb'>Invoice</button>
                             </a>
                         </td>";
@@ -487,7 +487,7 @@ function pdfCreator() {
         else {
             ## WRITE HTML FOR THE TABLE CELL(BUTTON) FOR EXPENSE
             $invoice = "<td class='noBorder' style='text-align: center;'> 
-                            <a  class='' style='color:white' href='/expense/?wwr_id=$wwr_id'>  
+                            <a  class='' style='color:white' href='/expense/?example_id=$example_id'>  
                                 <button type='button' class='buttonb'>Expense</button>
                             </a>
                         </td>";
@@ -502,10 +502,10 @@ function pdfCreator() {
                             <tr class='noBorder'>
                                 <td id='titleBox' style='width: 300px;' class='thisBox noBorder'><b> <span style='font-size:20px'>$last_name, $first_name</span>
                                     <br> 
-                                    $wwr_id</b><small> / $file_number 
+                                    $example_id</b><small> / $file_number 
                                     <br>
                                     <div style='line-height:11px;'> 
-                                        <a class='darklink' href='/wp-content/uploads/wwr-cu/". $wwr_id . "_Current_Report.pdf?buster=<$now' target='_blank'>Current Report</a></small>
+                                        <a class='darklink' href='/wp-content/uploads/example-cu/". $example_id . "_Current_Report.pdf?buster=<$now' target='_blank'>Current Report</a></small>
                                         <span style='line-height:0px;'><small>, $whenLastSaved, $whoLastSaved</small></span>
                                     </div>
                                 </td>
@@ -519,34 +519,34 @@ function pdfCreator() {
                                     <button type='button' id='secondarySubmit' class='buttong noDoubleClick'>Create PDF</button>
                                 </td>
                                 <td  class='noBorder' style='text-align: center;'>
-                                    <a style='color:white' href='/task-view/?task_id=$wwr_id'> 
+                                    <a style='color:white' href='/task-view/?task_id=$example_id'> 
                                         <button class='buttonb'>Task View</button>
                                     </a>
                                 </td>
                                 <td  class='noBorder' style='text-align: center;'>
-                                    <a class='' style='color:white' href='/notes/?task_id=$wwr_id'>
+                                    <a class='' style='color:white' href='/notes/?task_id=$example_id'>
                                         <button type='button' class='buttonb'>Source Notes</button>
                                     </a>
                                 </td>
                                 <td  class='noBorder' style='text-align: center;'>
-                                    <a class='' style='color:white' href='/requests/?task_id=$wwr_id'>
+                                    <a class='' style='color:white' href='/requests/?task_id=$example_id'>
                                         <button type='button' class='buttonb'>Record Requests</button>
                                     </a>
                                 </td>
                                 <td  class='noBorder' style='text-align: center;'>
-                                    <a class='' style='color:white' href='/pdf-creator/?wwr_id=$wwr_id'>
+                                    <a class='' style='color:white' href='/pdf-creator/?example_id=$example_id'>
                                         <button type='button' class='buttonb currentPage'>PDF Creator</button>
                                     </a>
                                 </td>
                                 $invoice
                                 <td class='noBorder' style='text-align: center;'>
-                                    <a class='' style='color:white' href='/time-card/?task_id=$wwr_id'>
+                                    <a class='' style='color:white' href='/time-card/?task_id=$example_id'>
                                         <button type='button' class='buttonb'> Time Card </button>  
                                     </a>
                                             
                                 </td>
                                 <td  class='noBorder' style='text-align: center;'>
-                                    <a class='' style='color:white' href='/customer-view/?task_id=$wwr_id'>
+                                    <a class='' style='color:white' href='/customer-view/?task_id=$example_id'>
                                         <button type='button' class='buttonb'>Customer View</button>
                                     </a>
                                 </td>
@@ -666,12 +666,12 @@ function pdfCreator() {
         $html.= "</table>";
 
         $html .= "
-        <label for ='newFileName'>Required: Choose a file name and document type for your new PDF. Note that the WWR ID will automatically be inserted before your filename.</label>
-            $wwr_id _<input required style='width:200px!important' id='newFileName' name='newFileName'type='text'>.pdf
+        <label for ='newFileName'>Required: Choose a file name and document type for your new PDF. Note that the example ID will automatically be inserted before your filename.</label>
+            $example_id _<input required style='width:200px!important' id='newFileName' name='newFileName'type='text'>.pdf
             &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Document Type:&nbsp;
             <select id='documentType' name='documentType' class='narrower'>";
         #ITERATE THROUGH ALL DOCUMENT TYPES 
-        $documentType = array("Investigator Use","Customer Use","Attachment for Report","Report","Report: Draft","Customer Upload","Customer Upload after Submission","Message from WWR");
+        $documentType = array("Investigator Use","Customer Use","Attachment for Report","Report","Report: Draft","Customer Upload","Customer Upload after Submission","Message from example");
         foreach($documentType as $type){
             $html.="<option>$type</option>";
         }
